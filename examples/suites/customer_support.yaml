@@ -1,0 +1,45 @@
+name: "Customer Support Bot Eval"
+description: "Evaluate chatbot responses for customer support quality"
+judges:
+  - name: "accuracy_judge"
+    dimension: "accuracy"
+    rubric: |
+      Score the response on factual accuracy (1-5):
+      5: Completely accurate, all claims are correct and verifiable
+      4: Mostly accurate, with minor imprecisions that don't mislead
+      3: Partially accurate, contains some errors alongside correct info
+      2: Mostly inaccurate, key claims are wrong
+      1: Completely wrong or fabricated information
+    weight: 0.4
+    scoring_scale: 5
+
+  - name: "helpfulness_judge"
+    dimension: "helpfulness"
+    rubric: |
+      Score how helpful the response is for the user (1-5):
+      5: Fully addresses the question with actionable steps
+      4: Mostly helpful, covers the main points but misses minor details
+      3: Somewhat helpful, gives partial guidance
+      2: Minimally helpful, vague or incomplete
+      1: Not helpful at all, ignores the question or gives irrelevant info
+    weight: 0.3
+    scoring_scale: 5
+
+  - name: "tone_judge"
+    dimension: "tone"
+    rubric: |
+      Score the professional tone and empathy of the response (1-5):
+      5: Professional, empathetic, and reassuring throughout
+      4: Mostly professional with appropriate empathy
+      3: Neutral tone, neither warm nor cold
+      2: Somewhat unprofessional or dismissive
+      1: Rude, dismissive, or inappropriate
+    weight: 0.3
+    scoring_scale: 5
+
+aggregation:
+  method: "hybrid"
+  pass_threshold: 3
+  critical_dimensions:
+    - "tone"
+  critical_threshold: 2

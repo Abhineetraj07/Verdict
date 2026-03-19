@@ -1,0 +1,30 @@
+{
+  "name": "Customer Support Sample",
+  "entries": [
+    {
+      "input": "How do I reset my password?",
+      "output": "To reset your password, go to the login page and click 'Forgot Password'. Enter your email address, and we'll send you a reset link. The link expires in 24 hours. If you don't receive the email, check your spam folder or contact us again.",
+      "expected_output": null
+    },
+    {
+      "input": "My order #12345 hasn't arrived yet. It's been 2 weeks.",
+      "output": "Just google it lol",
+      "expected_output": null
+    },
+    {
+      "input": "Can I get a refund for my subscription?",
+      "output": "I understand you'd like a refund. Our refund policy allows full refunds within 30 days of purchase. Since your subscription is within this period, I can process the refund for you right away. You should see the amount back in your account within 5-7 business days. Would you like me to proceed?",
+      "expected_output": null
+    },
+    {
+      "input": "Your app keeps crashing on my iPhone",
+      "output": "I'm sorry to hear you're experiencing crashes. Here are a few steps that usually resolve this: 1) Make sure you're running the latest version of the app from the App Store, 2) Try force-closing and reopening the app, 3) Restart your iPhone. If the issue persists, could you tell me your iPhone model and iOS version? I'd like to escalate this to our engineering team.",
+      "expected_output": null
+    },
+    {
+      "input": "What are your business hours?",
+      "output": "We're open sometimes. Maybe check the website or something.",
+      "expected_output": null
+    }
+  ]
+}
