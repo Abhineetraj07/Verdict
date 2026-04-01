@@ -22,8 +22,8 @@ class GeminiProvider(LLMProvider):
         self._semaphore = asyncio.Semaphore(settings.rate_limit_rpm)
 
     @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=2, min=4, max=60),
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=2, min=8, max=120),
     )
     async def generate(self, system_prompt: str, user_prompt: str) -> str:
         async with self._semaphore:

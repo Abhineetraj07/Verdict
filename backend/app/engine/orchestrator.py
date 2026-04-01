@@ -64,32 +64,35 @@ async def evaluate_entry(
 
 
 async def run_evaluation_node(state: EvalState) -> dict:
-    """Main evaluation node: fans out judges across all entries."""
+    """Main evaluation node: evaluates entries sequentially, judges in parallel per entry.
+
+    With Gemini free tier (15 RPM), we process one entry at a time.
+    Each entry runs its judges in parallel (typically 3 calls),
+    then waits before the next entry to stay within rate limits.
+    """
     suite = state["suite"]
     entries = state["entries"]
     provider = state["provider"]
+    num_judges = len(suite.judges)
 
-    logger.info("Starting evaluation: %d entries, %d judges", len(entries), len(suite.judges))
+    logger.info("Starting evaluation: %d entries, %d judges", len(entries), num_judges)
 
-    batch_size = 5
+    # Calculate delay: with 15 RPM and N judges per entry,
+    # we can do floor(15/N) entries per minute
+    delay_between_entries = max(1, (num_judges * 60) // 15 + 2)
+
     all_results: list[EntryResult] = []
 
-    for i in range(0, len(entries), batch_size):
-        batch = entries[i : i + batch_size]
-        tasks = [
-            evaluate_entry(i + j, entry, suite.judges, provider, suite.aggregation)
-            for j, entry in enumerate(batch)
-        ]
-        batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+    for i, entry in enumerate(entries):
+        try:
+            result = await evaluate_entry(i, entry, suite.judges, provider, suite.aggregation)
+            all_results.append(result)
+            logger.info("Entry %d/%d scored: %.2f", i + 1, len(entries), result.aggregated_score)
+        except Exception as e:
+            logger.error("Entry %d evaluation failed: %s", i, e)
 
-        for result in batch_results:
-            if isinstance(result, Exception):
-                logger.error("Entry evaluation failed: %s", result)
-            else:
-                all_results.append(result)
-
-        if i + batch_size < len(entries):
-            await asyncio.sleep(4)
+        if i < len(entries) - 1:
+            await asyncio.sleep(delay_between_entries)
 
     return {"entry_results": all_results, "status": "evaluated"}
 
