@@ -1,98 +1,114 @@
-# Verdict — Federated Prompt Evaluation Framework
+<h1 align="center">⚖️ Verdict — Federated LLM Evaluation Framework</h1>
 
-An open-source LLM evaluation framework where multiple AI judges independently score outputs across configurable dimensions, aggregate results using 5 strategies, and present findings in an interactive dashboard.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-Backend-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/LangGraph-Orchestration-2CA5E0?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/React-Dashboard-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Google_Gemini-LLM-4285F4?style=for-the-badge&logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tests-46_passing-brightgreen?style=for-the-badge&logo=pytest&logoColor=white" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" />
+</p>
 
-Built with **FastAPI**, **LangGraph**, **Google Gemini**, **React**, and **Recharts**.
+<p align="center">
+  An open-source framework where <b>multiple AI judges independently score LLM outputs</b> across configurable dimensions, aggregate results using 5 strategies, and surface findings in an interactive analytics dashboard.
+</p>
 
-## Why Verdict?
+---
+
+## 🤔 Why Verdict?
 
 Evaluating LLM outputs manually doesn't scale. Verdict automates it by:
 
-- **Multi-dimensional scoring** — Each judge evaluates a specific quality (accuracy, tone, safety, etc.) with its own rubric
-- **Parallel judge execution** — Judges run concurrently per entry using `asyncio.gather`
-- **Configurable aggregation** — 5 methods to combine scores based on your use case
-- **Interactive dashboard** — Radar charts, heatmaps, score distributions, and drill-down reasoning
-- **Side-by-side comparison** — Compare runs to track if your prompts are improving
+- 🧑‍⚖️ **Multi-judge panel** — each judge owns one quality dimension (accuracy, tone, safety…) with its own rubric
+- ⚡ **Parallel execution** — judges run concurrently per entry via `asyncio.gather`
+- 🎛️ **5 aggregation strategies** — from simple weighted average to hybrid critical-dimension gating
+- 📊 **Rich dashboard** — radar charts, heatmaps, score distributions, per-entry drill-down
+- 🔀 **Run comparison** — compare two evaluation runs side-by-side to track prompt improvements
 
-## Architecture
+---
+
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │                   React Dashboard                    │
-│  (Radar Charts, Heatmaps, Score Distributions)      │
+│  (Radar Charts · Heatmaps · Score Distributions)    │
 └──────────────────────┬──────────────────────────────┘
                        │ REST API
 ┌──────────────────────▼──────────────────────────────┐
 │                  FastAPI Backend                      │
 │  ┌─────────┐  ┌──────────┐  ┌────────────────────┐  │
 │  │  Suites │  │ Datasets │  │   Evaluations      │  │
-│  │  CRUD   │  │  CRUD    │  │   (Background)     │  │
+│  │  CRUD   │  │  CRUD    │  │  (Background task) │  │
 │  └─────────┘  └──────────┘  └────────┬───────────┘  │
 │                                      │               │
 │  ┌───────────────────────────────────▼────────────┐  │
 │  │          LangGraph Orchestrator                │  │
 │  │  ┌──────────┐    ┌───────────┐    ┌────────┐  │  │
-│  │  │ Evaluate │───>│ Aggregate │───>│  END   │  │  │
-│  │  │ (judges) │    │ (scores)  │    │        │  │  │
-│  │  └──────────┘    └───────────┘    └────────┘  │  │
+│  │  │ Evaluate │───▶│ Aggregate │───▶│  END   │  │  │
+│  │  │ (judges) │    │ (scores)  │    └────────┘  │  │
+│  │  └──────────┘    └───────────┘                │  │
 │  └───────────────────────────────────────────────┘  │
 │                       │                              │
 │  ┌────────────────────▼───────────────────────────┐  │
-│  │           Gemini Provider                      │  │
-│  │  (Rate limiting, Retry, Structured JSON)       │  │
+│  │   Gemini Provider (rate limit · retry · JSON)  │  │
 │  └────────────────────────────────────────────────┘  │
-│                                                      │
 │  ┌────────────────────────────────────────────────┐  │
-│  │  SQLite + SQLAlchemy (async)                   │  │
+│  │  SQLite + SQLAlchemy async (4 tables)          │  │
 │  └────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────┘
 ```
 
-## Features
+---
 
-### Evaluation Engine
+## ✨ Features
+
+### 🧑‍⚖️ Evaluation Engine
 - **LangGraph StateGraph** orchestration with typed state and annotated reducers
 - **Parallel judge execution** within each entry via `asyncio.gather`
-- **Sequential entry processing** with calculated delays to respect Gemini's 15 RPM free tier
-- **Exponential backoff retry** (5 attempts, 8-120s wait) using `tenacity`
+- **Sequential entry processing** with calculated delays — respects Gemini's 15 RPM free tier
+- **Exponential backoff retry** (5 attempts, 8–120s) via `tenacity`
 - **Rate limiting** via `asyncio.Semaphore`
 
-### 5 Aggregation Methods
+### 🎛️ 5 Aggregation Methods
 
-| Method | When to use |
-|---|---|
+| Method | Best For |
+|--------|----------|
 | **Weighted Average** | Default — all dimensions matter with different importance |
 | **Min Score** | Conservative — any failed dimension = overall fail |
-| **Majority Vote** | Binary pass/fail decisions with configurable threshold |
+| **Majority Vote** | Binary pass/fail with configurable threshold |
 | **Median** | Robust to outlier judges giving extreme scores |
-| **Hybrid** | Critical dimension gating + weighted average (e.g., safety < 3 = instant FAIL) |
+| **Hybrid** | Critical dimension gating + weighted average (e.g. `safety < 3` = instant FAIL) |
 
-### Dashboard Visualizations
-- **Radar chart** — Dimension scores at a glance
-- **Bar chart** — Per-entry score distribution
-- **Heatmap** — Entries x Dimensions score matrix
-- **Entry drill-down** — Expand to see judge reasoning
-- **Run comparison** — Overlaid radar + per-entry deltas
+### 📊 Dashboard Visualizations
+- **Radar chart** — dimension scores at a glance
+- **Bar chart** — per-entry score distribution
+- **Heatmap** — Entries × Dimensions score matrix
+- **Entry drill-down** — expand to see full judge reasoning
+- **Run comparison** — overlaid radar + per-entry deltas
 
-### CLI
+### 🖥️ CLI
 ```bash
 python -m cli.verdict_cli run --suite suite.yaml --dataset data.json --output results.json
-python -m cli.verdict_cli init  # Generate example files
+python -m cli.verdict_cli init   # Generate example files
 ```
 
-## Quick Start
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 - Python 3.11+
 - Node.js 18+
 - [Google Gemini API key](https://aistudio.google.com/apikey) (free tier works)
 
-### Setup
+### Installation
 
 ```bash
-# Clone
-git clone https://github.com/yourusername/verdict.git
-cd verdict
+git clone https://github.com/Abhineetraj07/Verdict.git
+cd Verdict
 
 # Backend
 conda create -n verdict python=3.11 -y
@@ -101,12 +117,10 @@ pip install -r backend/requirements.txt
 
 # Environment
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
+# Add your GEMINI_API_KEY to .env
 
 # Frontend
-cd frontend
-npm install
-cd ..
+cd frontend && npm install && cd ..
 ```
 
 ### Run
@@ -119,79 +133,74 @@ uvicorn backend.app.main:app --reload --port 8000
 cd frontend && npm run dev
 ```
 
-Open **http://localhost:5173** — the dashboard is ready.
+Open **http://localhost:5173** — dashboard ready.
 
-### Docker
+### Docker (one command)
 
 ```bash
 docker compose up --build
 ```
 
-Backend at `:8000`, frontend at `:5173`.
+Backend at `:8000` · Frontend at `:5173`
 
-### Run Tests
+### Tests
 
 ```bash
-pytest tests/ -v
+pytest tests/ -v   # 46 tests across aggregator, schemas, judges, API
 ```
 
-## Usage
+---
 
-### 1. Create a Suite
-Define your judge panel — each judge has a dimension, rubric, weight, and scoring scale.
+## 📖 Usage
+
+### 1. Define a Judge Suite (YAML)
 
 ```yaml
 name: "Customer Support Bot Eval"
 judges:
   - name: "accuracy_judge"
     dimension: "accuracy"
-    rubric: "Score on factual accuracy (1-5)..."
+    rubric: "Score factual accuracy 1-5. Deduct for wrong info or hallucinations."
     weight: 0.4
     scoring_scale: 5
   - name: "tone_judge"
     dimension: "tone"
-    rubric: "Score professional tone (1-5)..."
+    rubric: "Score professional tone 1-5. Rude or dismissive responses score 1."
     weight: 0.3
     scoring_scale: 5
 aggregation:
   method: "hybrid"
   critical_dimensions: ["tone"]
-  critical_threshold: 2
+  critical_threshold: 2      # tone < 2 = instant FAIL regardless of other scores
 ```
 
-### 2. Create a Dataset
-Provide input-output pairs to evaluate.
+### 2. Create a Dataset (JSON)
 
 ```json
 {
   "name": "Support Samples",
   "entries": [
-    {"input": "How do I reset my password?", "output": "Go to login page, click Forgot Password..."},
-    {"input": "My order is late", "output": "Just google it lol"}
+    { "input": "How do I reset my password?", "output": "Go to login, click Forgot Password..." },
+    { "input": "My order is late",            "output": "Just google it lol" }
   ]
 }
 ```
 
-### 3. Run Evaluation
-Select suite + dataset from the Runs page and click **Run Evaluation**. The engine:
-1. Processes each entry sequentially (rate limit aware)
-2. Runs all judges in parallel per entry
-3. Aggregates scores using your configured method
-4. Saves results to the database
+### 3. Run & Analyse
 
-### 4. Analyze Results
-View radar charts, heatmaps, and per-entry drill-downs. The bad response ("Just google it lol") will score low across all dimensions — and the hybrid aggregation's tone gate will flag it as a hard FAIL.
+Select suite + dataset in the dashboard → click **Run Evaluation** → watch judges score in real-time → drill down into per-entry reasoning → compare against previous runs to track improvement.
 
-### 5. Compare Runs
-Tweak your prompts, run again on the same dataset, then compare side-by-side to see what improved.
+The bad response (`"Just google it lol"`) will score low across all dimensions, and the hybrid aggregation's tone gate will flag it as a hard **FAIL**.
 
-## Project Structure
+---
+
+## 📁 Project Structure
 
 ```
-verdict/
+Verdict/
 ├── backend/
 │   └── app/
-│       ├── main.py              # FastAPI app with lifespan, CORS, routers
+│       ├── main.py              # FastAPI app — lifespan, CORS, routers
 │       ├── config.py            # Pydantic settings from .env
 │       ├── models/
 │       │   ├── schemas.py       # 13 Pydantic models (validation layer)
@@ -203,55 +212,70 @@ verdict/
 │       │   └── results.py       # Run comparison endpoint
 │       ├── engine/
 │       │   ├── orchestrator.py  # LangGraph StateGraph workflow
-│       │   ├── judges.py        # Prompt building + judge execution
+│       │   ├── judges.py        # Prompt building + parallel judge execution
 │       │   └── aggregator.py    # 5 aggregation strategies
 │       └── providers/
 │           ├── base.py          # Abstract LLM provider (Strategy pattern)
-│           └── gemini.py        # Gemini with rate limiting + retry
+│           └── gemini.py        # Gemini: rate limiting + exponential backoff retry
 ├── frontend/src/
 │   ├── api/                     # TypeScript types, axios client, React Query hooks
 │   ├── components/              # Layout, StatusBadge, ScoreBar
 │   └── pages/                   # Dashboard, Suites, Datasets, Runs, RunDetail, Compare
 ├── cli/
-│   └── verdict_cli.py           # Typer CLI with Rich output
+│   └── verdict_cli.py           # Typer CLI with Rich terminal output
 ├── tests/                       # 46 tests (aggregator, schemas, judges, API)
 ├── examples/                    # 4 ready-to-use suite + dataset pairs
 ├── docker-compose.yml
 └── Dockerfile
 ```
 
-## Tech Stack
+---
+
+## 🔌 API Reference
+
+```
+POST   /api/suites              Create evaluation suite
+GET    /api/suites              List all suites
+GET    /api/suites/{id}         Get suite details
+
+POST   /api/datasets            Create dataset
+GET    /api/datasets            List datasets
+
+POST   /api/evaluations/run     Trigger evaluation run (background)
+GET    /api/evaluations         List all runs
+GET    /api/evaluations/{id}    Get run results
+
+GET    /api/compare?run_ids=a,b Compare runs side-by-side
+GET    /health                  Health check
+```
+
+Full interactive docs at **http://localhost:8000/docs** (Swagger UI).
+
+---
+
+## 🛠️ Tech Stack
 
 | Layer | Technology |
-|---|---|
-| Backend | FastAPI, Python 3.11, SQLAlchemy (async), Pydantic |
-| LLM | Google Gemini (free tier) |
-| Orchestration | LangGraph (StateGraph) |
-| Frontend | React, TypeScript, Vite, TailwindCSS |
-| Visualizations | Recharts (radar, bar, heatmap) |
-| State Management | TanStack React Query |
-| CLI | Typer + Rich |
-| Testing | pytest + pytest-asyncio + httpx |
-| Deployment | Docker + Nginx |
+|-------|-----------|
+| **Backend** | FastAPI · Python 3.11 · SQLAlchemy (async) · Pydantic v2 |
+| **LLM** | Google Gemini (free tier supported) |
+| **Orchestration** | LangGraph (StateGraph) |
+| **Frontend** | React · TypeScript · Vite · TailwindCSS |
+| **Visualizations** | Recharts (radar, bar, heatmap) |
+| **State Management** | TanStack React Query |
+| **CLI** | Typer + Rich |
+| **Testing** | pytest · pytest-asyncio · httpx |
+| **Deployment** | Docker + Nginx |
 
-## API Endpoints
+---
 
-```
-POST   /api/suites              # Create eval suite
-GET    /api/suites              # List all suites
-GET    /api/suites/{id}         # Get suite details
+## 👨‍💻 Author
 
-POST   /api/datasets            # Create dataset
-GET    /api/datasets            # List datasets
+**Abhineet Raj** · CS @ SRM Institute of Science & Technology
+🌐 [Portfolio](https://aabhineet07-portfolio.netlify.app/) · 🐙 [GitHub](https://github.com/Abhineetraj07)
 
-POST   /api/evaluations/run     # Trigger evaluation run
-GET    /api/evaluations         # List all runs
-GET    /api/evaluations/{id}    # Get run results
+---
 
-GET    /api/compare?run_ids=a,b # Compare runs side-by-side
-GET    /health                  # Health check
-```
+## 📄 License
 
-## License
-
-MIT
+MIT License
