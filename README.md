@@ -12,6 +12,12 @@
 </p>
 
 <p align="center">
+  <img src="https://github.com/Abhineetraj07/Verdict/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  <img src="https://img.shields.io/github/last-commit/Abhineetraj07/Verdict?style=flat-square&color=blue" alt="Last Commit" />
+  <img src="https://img.shields.io/github/stars/Abhineetraj07/Verdict?style=flat-square&color=yellow" alt="Stars" />
+</p>
+
+<p align="center">
   An open-source framework where <b>multiple AI judges independently score LLM outputs</b> across configurable dimensions, aggregate results using 5 strategies, and surface findings in an interactive analytics dashboard.
 </p>
 
@@ -171,7 +177,7 @@ judges:
 aggregation:
   method: "hybrid"
   critical_dimensions: ["tone"]
-  critical_threshold: 2      # tone < 2 = instant FAIL regardless of other scores
+  critical_threshold: 2
 ```
 
 ### 2. Create a Dataset (JSON)
@@ -188,9 +194,7 @@ aggregation:
 
 ### 3. Run & Analyse
 
-Select suite + dataset in the dashboard → click **Run Evaluation** → watch judges score in real-time → drill down into per-entry reasoning → compare against previous runs to track improvement.
-
-The bad response (`"Just google it lol"`) will score low across all dimensions, and the hybrid aggregation's tone gate will flag it as a hard **FAIL**.
+Select suite + dataset in the dashboard → click **Run Evaluation** → drill down into per-entry reasoning → compare against previous runs.
 
 ---
 
@@ -203,27 +207,18 @@ Verdict/
 │       ├── main.py              # FastAPI app — lifespan, CORS, routers
 │       ├── config.py            # Pydantic settings from .env
 │       ├── models/
-│       │   ├── schemas.py       # 13 Pydantic models (validation layer)
+│       │   ├── schemas.py       # 13 Pydantic models
 │       │   └── database.py      # SQLAlchemy async ORM (4 tables)
-│       ├── api/routes/
-│       │   ├── suites.py        # Suite CRUD
-│       │   ├── datasets.py      # Dataset CRUD
-│       │   ├── evaluations.py   # Run trigger + background execution
-│       │   └── results.py       # Run comparison endpoint
+│       ├── api/routes/          # suites, datasets, evaluations, results
 │       ├── engine/
-│       │   ├── orchestrator.py  # LangGraph StateGraph workflow
-│       │   ├── judges.py        # Prompt building + parallel judge execution
+│       │   ├── orchestrator.py  # LangGraph StateGraph
+│       │   ├── judges.py        # Parallel judge execution
 │       │   └── aggregator.py    # 5 aggregation strategies
 │       └── providers/
-│           ├── base.py          # Abstract LLM provider (Strategy pattern)
-│           └── gemini.py        # Gemini: rate limiting + exponential backoff retry
-├── frontend/src/
-│   ├── api/                     # TypeScript types, axios client, React Query hooks
-│   ├── components/              # Layout, StatusBadge, ScoreBar
-│   └── pages/                   # Dashboard, Suites, Datasets, Runs, RunDetail, Compare
-├── cli/
-│   └── verdict_cli.py           # Typer CLI with Rich terminal output
-├── tests/                       # 46 tests (aggregator, schemas, judges, API)
+│           └── gemini.py        # Rate limiting + retry
+├── frontend/src/                # React · TypeScript · Vite · TailwindCSS
+├── cli/verdict_cli.py           # Typer CLI with Rich output
+├── tests/                       # 46 tests
 ├── examples/                    # 4 ready-to-use suite + dataset pairs
 ├── docker-compose.yml
 └── Dockerfile
@@ -236,20 +231,14 @@ Verdict/
 ```
 POST   /api/suites              Create evaluation suite
 GET    /api/suites              List all suites
-GET    /api/suites/{id}         Get suite details
-
 POST   /api/datasets            Create dataset
-GET    /api/datasets            List datasets
-
 POST   /api/evaluations/run     Trigger evaluation run (background)
-GET    /api/evaluations         List all runs
 GET    /api/evaluations/{id}    Get run results
-
 GET    /api/compare?run_ids=a,b Compare runs side-by-side
 GET    /health                  Health check
 ```
 
-Full interactive docs at **http://localhost:8000/docs** (Swagger UI).
+Full interactive docs at **http://localhost:8000/docs**
 
 ---
 
@@ -257,21 +246,18 @@ Full interactive docs at **http://localhost:8000/docs** (Swagger UI).
 
 | Layer | Technology |
 |-------|-----------|
-| **Backend** | FastAPI · Python 3.11 · SQLAlchemy (async) · Pydantic v2 |
-| **LLM** | Google Gemini (free tier supported) |
+| **Backend** | FastAPI · Python 3.11 · SQLAlchemy async · Pydantic v2 |
+| **LLM** | Google Gemini (free tier) |
 | **Orchestration** | LangGraph (StateGraph) |
-| **Frontend** | React · TypeScript · Vite · TailwindCSS |
-| **Visualizations** | Recharts (radar, bar, heatmap) |
-| **State Management** | TanStack React Query |
-| **CLI** | Typer + Rich |
-| **Testing** | pytest · pytest-asyncio · httpx |
+| **Frontend** | React · TypeScript · Vite · TailwindCSS · Recharts |
+| **Testing** | pytest · pytest-asyncio · httpx (46 tests) |
 | **Deployment** | Docker + Nginx |
 
 ---
 
 ## 👨‍💻 Author
 
-**Abhineet Raj** · CS @ SRM Institute of Science & Technology
+**Abhineet Raj** · CS @ SRM Institute of Science & Technology  
 🌐 [Portfolio](https://aabhineet07-portfolio.netlify.app/) · 🐙 [GitHub](https://github.com/Abhineetraj07)
 
 ---
