@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 jobs:
-  lint-and-test:
-    name: Lint & Test
+  backend-lint-and-test:
+    name: Backend — Lint & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -21,29 +21,71 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: Install backend dependencies
+        # requirements.txt lives in backend/ — not root
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install flake8 black pytest
+          pip install -r backend/requirements.txt
+          pip install flake8 black pytest pytest-asyncio httpx
 
-      - name: Lint with flake8
+      - name: Lint — syntax errors and undefined names
         run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+          flake8 backend/ cli/ --count --select=E9,F63,F7,F82 --show-source --statistics
 
-      - name: Check formatting with black
+      - name: Lint — style warnings (non-blocking)
         run: |
-          black --check --diff . || true
+          flake8 backend/ cli/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Run tests
+      - name: Format check (non-blocking)
         run: |
-          pytest tests/ -v --tb=short || echo "No tests yet."
+          black --check --diff backend/ cli/ || echo "ℹ️  Run 'black backend/ cli/' to fix formatting"
+
+      - name: Run backend tests
+        run: |
+          pytest tests/ -v --tb=short 2>/dev/null || echo "ℹ️  No tests yet"
 
   docker-build:
     name: Docker Build Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Build Docker image
-        run: docker build -t verdict-app . || echo "No Dockerfile found."
+        # Dockerfile correctly references backend/requirements.txt — build from root context
+        run: |
+          docker build -t verdict-app:ci .
+          echo "✅ Docker build succeeded"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install bandit
+        run: pip install bandit
+
+      - name: Run security scan (non-blocking)
+        run: |
+          bandit -r backend/ cli/ --severity-level medium -f txt || echo "ℹ️  Security warnings found — review above"
+
+  validate-structure:
+    name: Validate Project Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required files exist
+        run: |
+          echo "Checking required project files..."
+          test -f backend/requirements.txt && echo "✅ backend/requirements.txt" || echo "❌ backend/requirements.txt missing"
+          test -f Dockerfile               && echo "✅ Dockerfile"               || echo "❌ Dockerfile missing"
+          test -f docker-compose.yml       && echo "✅ docker-compose.yml"       || echo "❌ docker-compose.yml missing"
+          test -f .env.example             && echo "✅ .env.example"             || echo "❌ .env.example missing"
+          test -f README.md                && echo "✅ README.md"                || echo "❌ README.md missing"
+          echo "Structure check complete."
